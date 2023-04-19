@@ -1,0 +1,25 @@
+# Найдём в папке files самый новый deb файл, загрузим его на хост и добавим в репо
+- name: Get files in a folder
+  ansible.builtin.find:
+    paths: "roles/repository/files"
+    patterns: '*.deb'
+  register: found_files
+  delegate_to: localhost
+
+
+- name: Get latest deb file
+  ansible.builtin.set_fact:
+    latest_file: "{{ found_files.files | sort(attribute='mtime', reverse=true) | first }}"
+
+- name: Upload latest deb file
+  ansible.builtin.copy:
+    src: '{{ latest_file.path }}'
+    dest: '/tmp/{{ latest_file.path | basename }}'
+    mode: 0644
+
+- name: Add deb to repo
+  ansible.builtin.command: reprepro -S utils -P optional includedeb bionic /tmp/{{ latest_file.path | basename }}
+  args:
+    chdir: /srv/reprepro/ubuntu
+  register: my_output
+  changed_when: my_output.rc != 0

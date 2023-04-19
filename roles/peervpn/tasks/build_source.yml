@@ -1,0 +1,43 @@
+---
+- name: Install required packages
+  ansible.builtin.apt:
+    pkg:
+      - build-essential
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Creates directory
+  ansible.builtin.file:
+    path: '{{ tmp_path }}'
+    state: directory
+    mode: 0644
+  register: deb_build_dir
+
+- name: Creates temp dir in /tmp
+  ansible.builtin.tempfile:
+    path: '{{ tmp_path }}'
+    state: directory
+    prefix: 'build-peervpn-'
+  register: tempdir
+
+- name: Download code from git to /tmp
+  ansible.builtin.git:
+    repo: '{{ project_git_repo }}'
+    version: '{{ project_git_branch }}'
+    clone: true
+    dest: '{{ tempdir.path }}'
+    force: true
+
+- name: Template a file to build.sh
+  ansible.builtin.template:
+    src: build.sh.j2
+    dest: '{{ tempdir.path }}/build.sh'
+    mode: '0755'
+
+- name: Build binary from source
+  ansible.builtin.command: "{{ tempdir.path }}/build.sh"
+  args:
+    chdir: '{{ tempdir.path }}'
+  register: my_output
+  changed_when: my_output.rc != 0

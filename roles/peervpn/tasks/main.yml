@@ -1,0 +1,19 @@
+---
+# tasks file for peervpn
+- name: Tasks for build from sources peervpn and post-clean
+  block:
+    - name: Build from source
+      tags: ['never', 'build', 'deb']
+      ansible.builtin.import_tasks: build_source.yml
+
+    - name: Make deb
+      tags: ['never', 'deb']
+      ansible.builtin.import_tasks: make_deb.yml
+
+    - name: Install
+      tags: ['never', 'install']
+      ansible.builtin.import_tasks: install.yml
+  always: # <--- an always
+    - name: Clean
+      tags: ['always']
+      ansible.builtin.import_tasks: clean.yml

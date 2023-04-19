@@ -1,0 +1,16 @@
+---
+# defaults file for peervpn
+project_git_repo: https://github.com/peervpn/peervpn.git
+project_git_branch: master
+version: '{{ PEERVPN_VERSION_MAJOR.stdout }}.{{ PEERVPN_VERSION_MINOR.stdout }}'
+
+
+build_package_control_fields:
+  Package: peervpn
+  Version: '{{ version }}'
+  Architecture: amd64
+  Maintainer: a.shibanov an.shibanov@gmail.com
+  Description: The open source peer-to-peer VPN www.peervpn.net
+
+tmp_path: '/tmp/peer-vpn-source'
+delete_temp_dir: true

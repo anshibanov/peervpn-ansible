@@ -1,0 +1,15 @@
+- name: Add specified repository into sources list using specified filename
+  ansible.builtin.apt_repository:
+    repo: 'deb [ allow-insecure=yes ] {{ repo_url }}/ubuntu bionic main'
+    state: present
+    filename: peervpn
+    update_cache: true
+
+- name: Install required packages
+  ansible.builtin.apt:
+    pkg:
+      - peervpn
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+    allow_unauthenticated: true # ToDo: настроить gpg подпись на репо peervpn

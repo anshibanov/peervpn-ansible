@@ -1,0 +1,5 @@
+---
+# vars file for peervpn
+repo_url: http://localhost.servapp.ru # без / на конце
+deb_revision: 1
+build_deb_path: roles/repository/files/

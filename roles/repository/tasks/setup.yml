@@ -1,0 +1,67 @@
+- name: Install required packages
+  ansible.builtin.apt:
+    pkg:
+      - nginx
+      - reprepro
+
+- name: Create directory if they don't exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  loop:
+    - /srv
+    - /srv/reprepro
+    - /srv/reprepro/ubuntu
+
+- name: Create directory if they don't exist
+  ansible.builtin.file:
+    path: "/srv/reprepro/ubuntu/{{ item }}"
+    state: directory
+    mode: 0755
+  loop:
+    - conf
+    - dists
+    - incoming
+    - indices
+    - logs
+    - pool
+    - project
+    - tmp
+
+- name: Copy control file
+  ansible.builtin.template:
+    src: distributions.j2
+    dest: /srv/reprepro/ubuntu/conf/distributions
+    mode: 0755
+
+- name: Copy override file
+  ansible.builtin.template:
+    src: distributions.j2
+    dest: /srv/reprepro/ubuntu/conf/override.focal
+    mode: 0755
+
+- name: Copy nginx config.
+  ansible.builtin.template:
+    src: vhost-packages.conf.j2
+    dest: /etc/nginx/sites-available/vhost-packages.conf
+    mode: 0644
+
+- name: Enable new site
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/vhost-packages.conf
+    dest: /etc/nginx/sites-enabled/vhost-packages.conf
+    state: link
+  ignore_errors: '{{ ansible_check_mode }}'
+
+- name: Verify Nginx config
+  ansible.builtin.command: nginx -t
+  changed_when: false
+  register: nginx_t
+  check_mode: false
+
+- name: Reload nginx
+  ansible.builtin.service:
+    name: nginx
+    state: reloaded
+  when: nginx_t.stderr is search("successful")

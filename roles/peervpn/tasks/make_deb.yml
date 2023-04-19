@@ -1,0 +1,61 @@
+- name: Grep PEERVPN_VERSION_MAJOR # noqa no-changed-when risky-shell-pipe
+  ansible.builtin.shell: cat globals.ic| grep -o -P -i '(?<=PEERVPN_VERSION_MAJOR\s)\d+'
+  args:
+    executable: /bin/bash
+    chdir: '{{ tempdir.path }}'
+  register: PEERVPN_VERSION_MAJOR
+  failed_when: "PEERVPN_VERSION_MAJOR.rc == 1"
+
+
+- name: Grep PEERVPN_VERSION_MINOR # noqa no-changed-when risky-shell-pipe
+  ansible.builtin.shell: cat globals.ic| grep -o -P -i '(?<=PEERVPN_VERSION_MINOR\s)\d+'
+  args:
+    executable: /bin/bash
+    chdir: '{{ tempdir.path }}'
+  register: PEERVPN_VERSION_MINOR
+  failed_when: "PEERVPN_VERSION_MINOR.rc == 1"
+
+
+- name: Creates directory
+  ansible.builtin.file:
+    path: '{{ tempdir.path }}/peer-vpn_{{ version }}-{{ deb_revision }}_amd64'
+    state: directory
+    mode: 0755
+  register: deb_build_dir
+
+- name: Create directory if they don't exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  loop:
+    - '{{ deb_build_dir.path }}/usr'
+    - '{{ deb_build_dir.path }}/usr/local'
+    - '{{ deb_build_dir.path }}/usr/local/bin'
+    - '{{ deb_build_dir.path }}/DEBIAN'
+
+- name: Copy control file.
+  ansible.builtin.template:
+    src: control-file.j2
+    dest: "{{ deb_build_dir.path }}/DEBIAN/control"
+    mode: 0644
+
+- name: Copy binary file
+  ansible.builtin.copy:
+    src: '{{ tempdir.path }}/peervpn'
+    dest: '{{ deb_build_dir.path }}/usr/local/bin/peervpn'
+    remote_src: true
+    mode: 0755
+
+- name: Build Debian package.
+  ansible.builtin.command: dpkg-deb --build {{ deb_build_dir.path }}
+  register: my_output
+  changed_when: my_output.rc != 0
+
+
+- name: Fetch build Debian package back to localhost.
+  ansible.builtin.fetch:
+    src: "{{ tempdir.path }}/peer-vpn_{{ version }}-{{ deb_revision }}_amd64.deb"
+    dest: "{{ build_deb_path }}"
+    flat: true
+    fail_on_missing: true

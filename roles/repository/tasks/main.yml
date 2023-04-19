@@ -1,0 +1,9 @@
+---
+# tasks file for repository
+- name: Build from source
+  tags: ['never', 'setup']
+  ansible.builtin.import_tasks: setup.yml
+
+- name: Add deb to repo
+  tags: ['never', 'add']
+  ansible.builtin.import_tasks: add.yml
